@@ -6,6 +6,7 @@ import shutil
 import sys
 import codecs
 import time
+import getpass
 from unidecode import unidecode
 
 # globals
@@ -14,6 +15,9 @@ last_interval = None
 success_count = 0
 fail_count = 0
 file = None
+recurse = False
+path = None
+dest_path = None
 
 # remove all illegal windows pathname chars ->  \ / : " * ? < > |
 def format_string(s):
@@ -33,12 +37,17 @@ def format_string(s):
         temp = temp[:-1]
     return temp
 
-def process_directory(path, dest_path, generate_logs, recurse):
+
+# TODO - this function needs to be refactored to handle unix and windows
+def process_directory(path):
     global success_count
     global fail_count
     global file
     global start_time
     global last_interval
+    global dest_path
+    global generate_logs
+    global recurse
 
     for file_name in os.listdir(path):
         if int(time.time() - last_interval) >= 15:
@@ -48,7 +57,10 @@ def process_directory(path, dest_path, generate_logs, recurse):
         full_path = path + file_name
 
         if os.path.isdir(full_path) and recurse:
-            process_directory(full_path + '\\', dest_path, generate_logs, recurse)
+            if os.name == 'nt':
+                process_directory(full_path + '\\')
+            else:
+                process_directory(full_path)
             try:
                 os.rmdir(full_path)
             except OSError:
@@ -83,7 +95,12 @@ def process_directory(path, dest_path, generate_logs, recurse):
         else:
             album = "Unknown Album"
 
-        artist_folder_path = dest_path + artist + '\\'
+        artist_folder_path = None
+        if os.name == 'nt':
+            artist_folder_path = dest_path + artist + '\\'
+        else:
+            artist_folder_path = dest_path + artist + '/'
+        
         album_folder_path = artist_folder_path + album 
 
         # check to see if artist directory exists
@@ -117,29 +134,28 @@ def process_directory(path, dest_path, generate_logs, recurse):
             fail_count += 1
             continue
 
-
-def main():
+def initWindows():
+    global recurse
+    global path
     global file
-    global success_count
-    global fail_count
-    global start_time
-    global last_interval
+    global dest_path
+    global generate_logs
 
-    path = input("Directory to work in? EX. C:\\Users\\{name}\\Music\\\n")
+    path = input("Directory to work in? EX. C:\\Users\\" + getpass.getuser() + "\\Music\\\n")
     if not path.endswith('\\'):
         path += '\\'
     if not os.path.isdir(path):
         print("Path is not valid.")
         sys.exit()
 
-    os.system('cls' if os.name == 'nt' else 'clear')
+    os.system('cls')
     recurse = input("Recurse through all internal directories? (y/n)\n")
     if recurse.lower() == 'y':
         recurse = True
     else:
         recurse = False
     
-    os.system('cls' if os.name == 'nt' else 'clear')
+    os.system('cls')
     dest_path = input("Directory to save to? Note: will create if doesn't exist.\n")
     if not dest_path.endswith('\\'):
         dest_path += '\\'
@@ -150,14 +166,15 @@ def main():
             print("Path is not valid.")
             sys.exit()
 
-    os.system('cls' if os.name == 'nt' else 'clear')
+    os.system('cls')
     generate_logs = input("Generate usage logs? (y/n)\n")
+
     if generate_logs.lower() == 'y':
         generate_logs = True
     else:
         generate_logs = False
 
-    os.system('cls' if os.name == 'nt' else 'clear')
+    os.system('cls')
     print("Working in " + path)
     print("Moving files to " + dest_path)
     stop = input("Is this correct? (y/n)\n")
@@ -174,16 +191,93 @@ def main():
         except:
             generate_logs = 'n'
 
+def initLinux():
+    global recurse
+    global file
+    global path
+    global dest_path
+    global generate_logs
+
+    path = input("Directory to work in? EX. /home/" + getpass.getuser() + "/Music \n")
+    
+    if not os.path.isdir(path):
+        print("Path is not valid.")
+        sys.exit()
+
+    os.system('clear')
+    recurse = input("Recurse through all internal directories? (y/n)\n")
+    if recurse.lower() == 'y':
+        recurse = True
+    else:
+        recurse = False
+    
+    os.system('clear')
+    dest_path = input("Directory to save to? Note: will create if doesn't exist.\n")
+    if not os.path.isdir(dest_path):
+        try:
+            os.makedirs(dest_path)
+        except:
+            print("Path is not valid.")
+            sys.exit()
+
+    os.system('clear')
+    generate_logs = input("Generate usage logs? (y/n)\n")
+    if generate_logs.lower() == 'y':
+        generate_logs = True
+    else:
+        generate_logs = False
+
+    os.system('clear')
+    print("Working in " + path)
+    print("Moving files to " + dest_path)
+    stop = input("Is this correct? (y/n)\n")
+    stop = stop.lower()
+    if stop != 'y':
+        print("Exiting before doing any work.")
+        sys.exit()
+
+    # ensure path has the necessary appended char after printing
+    if not path.endswith('/'):
+        path += '/'
+    if not dest_path.endswith('/'):
+        dest_path += '/'
+
+    if generate_logs:
+        try:
+            # remove prev logs if exist
+            open('MP3Sorter_log.txt', 'w+').close()
+            file = open("MP3Sorter_log.txt", "a+")
+        except:
+            generate_logs = 'n'
+
+def main():
+    global success_count
+    global fail_count
+    global start_time
+    global last_interval
+    global recurse
+    global path
+    global dest_path
+    global generate_logs
+
+    if(os.name == 'nt'):
+        initWindows()
+    else:
+        initLinux()
+
     start_time = time.time()
     last_interval = start_time
 
-    process_directory(path, dest_path, generate_logs, recurse)
+    process_directory(path)
 
     run_time = time.time() - start_time
 
     os.system('cls' if os.name == 'nt' else 'clear')
     print("Successfully processed " + str(success_count) + " files with " + str(fail_count) + " failures in " + str(int(run_time)) + " seconds.")
     if generate_logs:
-        print("Log file located at " + os.getcwd() + '\\' + "MP3Sorter_log.txt")
-
+        if os.name == 'nt':
+            print("Log file located at " + os.getcwd() + '\\' + "MP3Sorter_log.txt")
+        else:
+            print("Log file located at " + os.getcwd() + '/' + "MP3Sorter_log.txt")
+        
 main()
