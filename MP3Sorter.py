@@ -18,6 +18,7 @@ file = None
 recurse = False
 path = None
 dest_path = None
+overwriting_dir = False
 
 # remove all illegal windows pathname chars ->  \ / : " * ? < > |
 def format_string(s):
@@ -48,6 +49,7 @@ def process_directory(path):
     global dest_path
     global generate_logs
     global recurse
+    global overwriting_dir
 
     for file_name in os.listdir(path):
         if int(time.time() - last_interval) >= 15:
@@ -129,9 +131,14 @@ def process_directory(path):
                 file.write(unidecode("Successfully moved " + file_name + " to " + album_folder_path + '\n'))
             success_count += 1
         except Exception as e:
-            if generate_logs:
-                file.write(unidecode("Error with following -> album: " + album + " Artist: " + artist + '\n'))
-            fail_count += 1
+            if(overwriting_dir):
+                file.write(unidecode("Successfully processed " + file_name + ". No need to move as it's already in correct location " + '\n'))
+                success_count += 1
+            else:            
+                if generate_logs:
+                    file.write(unidecode("Error with following -> album: " + album + " Artist: " + artist + '\n'))
+                    file.write(unidecode(full_path + " : " + album_folder_path + "\n"))
+                fail_count += 1
             continue
 
 def initWindows():
@@ -140,6 +147,7 @@ def initWindows():
     global file
     global dest_path
     global generate_logs
+    global overwriting_dir
 
     path = input("Directory to work in? EX. C:\\Users\\" + getpass.getuser() + "\\Music\\\n")
     if not path.endswith('\\'):
@@ -165,6 +173,9 @@ def initWindows():
         except:
             print("Path is not valid.")
             sys.exit()
+
+    if(path == dest_path):
+        overwriting_dir = True
 
     os.system('cls')
     generate_logs = input("Generate usage logs? (y/n)\n")
@@ -267,7 +278,8 @@ def main():
 
     start_time = time.time()
     last_interval = start_time
-
+    
+    print("Starting ...")
     process_directory(path)
 
     run_time = time.time() - start_time
