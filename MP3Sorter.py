@@ -132,12 +132,12 @@ def process_directory(path):
             success_count += 1
         except Exception as e:
             if(overwriting_dir):
-                file.write(unidecode("Successfully processed " + file_name + ". No need to move as it's already in correct location " + '\n'))
+                if(generate_logs):
+                    file.write(unidecode("Successfully processed " + file_name + ". No need to move as it's already in correct location " + '\n'))
                 success_count += 1
-            else:            
-                if generate_logs:
-                    file.write(unidecode("Error with following -> album: " + album + " Artist: " + artist + '\n'))
-                    file.write(unidecode(full_path + " : " + album_folder_path + "\n"))
+            elif(generate_logs):  
+                file.write(unidecode("Error with following -> album: " + album + " Artist: " + artist + '\n'))
+                file.write(unidecode(full_path + " : " + album_folder_path + "\n"))
                 fail_count += 1
             continue
 
