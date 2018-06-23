@@ -197,8 +197,8 @@ def initWindows():
     if generate_logs:
         try:
             # remove prev logs if exist
-            open('MP3Sorter_log.txt', 'w+').close()
-            file = open("MP3Sorter_log.txt", "a+")
+            open(os.path.join(dest_path, 'MP3Sorter_log.txt'), 'w+').close()
+            file = open(os.path.join(dest_path, 'MP3Sorter_log.txt'), "a+")
         except:
             generate_logs = 'n'
 
@@ -256,8 +256,8 @@ def initLinux():
     if generate_logs:
         try:
             # remove prev logs if exist
-            open('MP3Sorter_log.txt', 'w+').close()
-            file = open("MP3Sorter_log.txt", "a+")
+            open(os.path.join(dest_path, 'MP3Sorter_log.txt'), 'w+').close()
+            file = open(os.path.join(dest_path, 'MP3Sorter_log.txt'), "a+")
         except:
             generate_logs = 'n'
 
@@ -288,8 +288,8 @@ def main():
     print("Successfully processed " + str(success_count) + " files with " + str(fail_count) + " failures in " + str(int(run_time)) + " seconds.")
     if generate_logs:
         if os.name == 'nt':
-            print("Log file located at " + os.getcwd() + '\\' + "MP3Sorter_log.txt")
+            print("Log file located at " + dest_path + "MP3Sorter_log.txt")
         else:
-            print("Log file located at " + os.getcwd() + '/' + "MP3Sorter_log.txt")
+            print("Log file located at " + dest_path + "MP3Sorter_log.txt")
         
 main()
